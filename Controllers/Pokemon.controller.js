@@ -35,8 +35,42 @@ module.exports = {
             res.json(pokemon);
         }catch(error) {
             console.log(erorr.message);
-            if(error instanceof mongoose.Mongoose.CastError){
+            if(error instanceof mongoose.CastError){
                 next(createError(400, "Invalid Name"));
+                return;
+            }
+            next(error);
+        }
+    },
+    getPokemonByID: async(req,res,next) => {
+        const id = req.params.id;
+        try{
+            const pokemon = await Pokemon.findById(id);
+            if(!pokemon){
+                throw createError(404, "Pokemon Not Found");
+            }
+            res.json(pokemon);
+        }catch(error) {
+            console.log(erorr.message);
+            if(error instanceof mongoose.CastError){
+                next(createError(400, "Invalid Name"));
+                return;
+            }
+            next(error);
+        }
+    },
+    deletePokemonByID: async(req,res,next) =>{
+        const id = req.params.id;
+        try{
+            const result = await Pokemon.findByIdAndDelete(id);
+            if(!result){
+                throw createError(404, "Pokemon does not exist.");
+            }
+            res.send(result);
+        }catch(error){
+            console.log(error.message);
+            if(error instanceof mongoose.CastError){
+                next(createError(400,"Invalid Name"));
                 return;
             }
             next(error);
