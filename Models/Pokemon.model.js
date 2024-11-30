@@ -18,7 +18,11 @@ const PokemonSchema = new Schema({
       next: { type: [mongoose.Schema.Types.ObjectId], ref: 'Pokemon', default: [] }
     },
     generation: { type: Number, required: true },
-    legendary: { type: Boolean, default: false }
+    legendary: { type: Boolean, default: false },
+    image: {
+      type: String,
+      required: true
+    }
 
 });
 
