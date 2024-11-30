@@ -11,14 +11,42 @@ module.exports = {
             console.log(error.message)
         }
     },
-    createNewPokemon: async(req,res,next) => {
-        try{
+    createNewPokemon: async (req, res, next) => {
+        try {
+            const { evolution } = req.body;
+    
+            // Ensure evolution.prev is converted to ObjectId if present
+            if (evolution?.prev) {
+                req.body.evolution.prev = new mongoose.Types.ObjectId(evolution.prev);
+            }
+    
+            // Ensure evolution.next is converted to an array of ObjectIds if present
+            if (evolution?.next?.length > 0) {
+                req.body.evolution.next = evolution.next.map(id => new mongoose.Types.ObjectId(id));
+            }
+    
+            // Create and save the Pokemon
             const pokemon = new Pokemon(req.body);
             const result = await pokemon.save();
-            res.send(result);
-        } catch(error) {
-            console.log(error.message);
-            if(error.name == 'ValidationError'){
+    
+            // Update the evolution relationships
+            if (evolution?.prev) {
+                await Pokemon.findByIdAndUpdate(evolution.prev, {
+                    $addToSet: { "evolution.next": result._id }
+                });
+            }
+    
+            if (evolution?.next?.length > 0) {
+                await Pokemon.updateMany(
+                    { _id: { $in: evolution.next } },
+                    { $set: { "evolution.prev": result._id } }
+                );
+            }
+    
+            res.status(201).send(result);
+        } catch (error) {
+            console.error(error.message);
+            if (error.name === "ValidationError") {
                 next(createError(422, error.message));
                 return;
             }
@@ -34,7 +62,7 @@ module.exports = {
             }
             res.json(pokemon);
         }catch(error) {
-            console.log(erorr.message);
+            console.log(error.message);
             if(error instanceof mongoose.CastError){
                 next(createError(400, "Invalid Name"));
                 return;
@@ -42,6 +70,26 @@ module.exports = {
             next(error);
         }
     },
+    getPokemonFiltered: async(req,res,next) => {
+        try{
+            const filters = {};
+            if(req.query.type){
+                filters.type = req.query.type;
+            }
+            if(req.query.generation){
+                filters.generation = parseInt(req.query.generation,10);
+            }
+            if(req.query.legendary){
+                filters.legendary = req.query.legendary === 'true';
+            }
+
+            const pokemons = await Pokemon.find(filters);
+            res.status(200).json(pokemons);
+        }catch(error){
+            console.log(error.message);
+        }
+    },
+
     getPokemonByID: async(req,res,next) => {
         const id = req.params.id;
         try{
@@ -51,7 +99,7 @@ module.exports = {
             }
             res.json(pokemon);
         }catch(error) {
-            console.log(erorr.message);
+            console.log(error.message);
             if(error instanceof mongoose.CastError){
                 next(createError(400, "Invalid Name"));
                 return;
@@ -72,6 +120,23 @@ module.exports = {
             if(error instanceof mongoose.CastError){
                 next(createError(400,"Invalid Name"));
                 return;
+            }
+            next(error);
+        }
+    },
+    updatePokemonByID: async(req,res,next)=>{
+        try {
+            const id = req.params.id;
+            const updateData = req.body;
+            const result = await Pokemon.findOneAndUpdate({ _id: id }, updateData, {new: true});
+            if(!result) {
+                throw createError(404, "Pokemon does not exist");
+            }
+            res.send(result);
+        } catch(error) {
+            console.log(error.message);
+            if(error instanceof mongoose.CastError) {
+                return next(createError(400, "Invalid Pokemon ID"));
             }
             next(error);
         }
