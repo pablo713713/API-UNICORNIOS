@@ -110,18 +110,35 @@ module.exports = {
             next(error);
         }
     },
-    deletePokemonByID: async(req,res,next) =>{
+    deletePokemonByID: async (req, res, next) => {
         const id = req.params.id;
-        try{
-            const result = await Pokemon.findByIdAndDelete(id);
-            if(!result){
+        try {
+            // Check if the Pokémon exists
+            const pokemonToDelete = await Pokemon.findById(id);
+            if (!pokemonToDelete) {
                 throw createError(404, "Pokemon does not exist.");
             }
-            res.send(result);
-        }catch(error){
+    
+            // Remove references to this Pokémon from other Pokémon's evolution fields
+            await Pokemon.updateMany(
+                { "evolution.next": id },
+                { $pull: { "evolution.next": id } } // Remove from 'next' evolutions
+            );
+    
+            await Pokemon.updateMany(
+                { "evolution.prev": id },
+                { $set: { "evolution.prev": null } } // Set 'prev' evolution to null
+            );
+    
+            // Delete the Pokémon
+            const result = await Pokemon.findByIdAndDelete(id);
+    
+            res.send(result); // Return deleted Pokémon details
+        } catch (error) {
             console.log(error.message);
-            if(error instanceof mongoose.CastError){
-                next(createError(400,"Invalid Name"));
+    
+            if (error instanceof mongoose.CastError) {
+                next(createError(400, "Invalid ID"));
                 return;
             }
             next(error);
