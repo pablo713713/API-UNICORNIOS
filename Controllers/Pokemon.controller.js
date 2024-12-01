@@ -82,6 +82,9 @@ module.exports = {
             if(req.query.legendary){
                 filters.legendary = req.query.legendary === 'true';
             }
+            if (req.query.name) {
+                filters.name = { $regex: req.query.name, $options: 'i' };
+            }
 
             const pokemons = await Pokemon.find(filters);
             res.status(200).json(pokemons);
