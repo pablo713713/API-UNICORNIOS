@@ -22,8 +22,11 @@ const PokemonSchema = new Schema({
     image: {
       type: String,
       required: true
-    }
-
+    },
+    img: {
+      data: Buffer, 
+      contentType: String 
+  }
 });
 
 const Pokemon = mongoose.model('Pokemon', PokemonSchema);

@@ -6,15 +6,29 @@ module.exports = {
     getAllPokemon: async(req,res,next) =>{
         try{
             const results = await Pokemon.find({}, {__v:0});
-            res.send(results);
+            const updatedResults = results.map(pokemon => {
+                const pokemonObj = pokemon.toObject();
+                if (pokemonObj.img && pokemonObj.img.data) {
+                    pokemonObj.img = `data:${pokemonObj.img.contentType};base64,${pokemonObj.img.data.toString('base64')}`;
+                }
+                return pokemonObj;
+            });
+            res.send(updatedResults);
         } catch(error) {
             console.log(error.message)
         }
     },
     createNewPokemon: async (req, res, next) => {
         try {
-            const { evolution } = req.body;
-    
+            const { evolution, img } = req.body;
+            if (img && typeof img === 'string') {
+                const [metadata, base64Data] = img.split(',');
+                const contentType = metadata.match(/:(.*?);/)[1];
+                req.body.img = {
+                    data: Buffer.from(base64Data, 'base64'),
+                    contentType,
+                };
+            }
             // Ensure evolution.prev is converted to ObjectId if present
             if (evolution?.prev) {
                 req.body.evolution.prev = new mongoose.Types.ObjectId(evolution.prev);
@@ -60,7 +74,11 @@ module.exports = {
             if(!pokemon){
                 throw createError(404, "Pokemon Not Found");
             }
-            res.json(pokemon);
+            const pokemonObj = pokemon.toObject();
+            if (pokemonObj.img && pokemonObj.img.data) {
+                pokemonObj.img = `data:${pokemonObj.img.contentType};base64,${pokemonObj.img.data.toString('base64')}`;
+            }
+            res.json(pokemonObj);
         }catch(error) {
             console.log(error.message);
             if(error instanceof mongoose.CastError){
@@ -86,8 +104,15 @@ module.exports = {
                 filters.name = { $regex: req.query.name, $options: 'i' };
             }
 
-            const pokemons = await Pokemon.find(filters);
-            res.status(200).json(pokemons);
+            const results = await Pokemon.find(filters);
+            const updatedResults = results.map(pokemon => {
+                const pokemonObj = pokemon.toObject();
+                if (pokemonObj.img && pokemonObj.img.data) {
+                    pokemonObj.img = `data:${pokemonObj.img.contentType};base64,${pokemonObj.img.data.toString('base64')}`;
+                }
+                return pokemonObj;
+            });
+            res.send(updatedResults);
         }catch(error){
             console.log(error.message);
         }
@@ -100,7 +125,11 @@ module.exports = {
             if(!pokemon){
                 throw createError(404, "Pokemon Not Found");
             }
-            res.json(pokemon);
+            const pokemonObj = pokemon.toObject();
+            if (pokemonObj.img && pokemonObj.img.data) {
+                pokemonObj.img = `data:${pokemonObj.img.contentType};base64,${pokemonObj.img.data.toString('base64')}`;
+            }
+            res.json(pokemonObj);
         }catch(error) {
             console.log(error.message);
             if(error instanceof mongoose.CastError){
