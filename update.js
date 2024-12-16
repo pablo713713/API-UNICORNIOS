@@ -2,21 +2,10 @@ const mongoose = require('mongoose');
 const axios = require('axios');
 const dotenv = require('dotenv').config();
 
-const PokemonSchema = new mongoose.Schema({
+const UnicornSchema = new mongoose.Schema({
     name: { type: String, required: true },
     type: { type: [String], required: true },
-    base: {
-        HP: { type: Number, default: 0 },
-        Attack: { type: Number, default: 0 },
-        Defense: { type: Number, default: 0 },
-        Speed: { type: Number, default: 0 }
-    },
-    evolution: {
-        prev: { type: mongoose.Schema.Types.ObjectId, ref: 'Pokemon', default: null },
-        next: { type: [mongoose.Schema.Types.ObjectId], ref: 'Pokemon', default: [] }
-    },
-    generation: { type: Number, required: true },
-    legendary: { type: Boolean, default: false },
+    description: { type: [String], required: true },
     image: { type: String, required: true },
     img: {
         data: Buffer,
@@ -24,7 +13,7 @@ const PokemonSchema = new mongoose.Schema({
     }
 });
 
-const Pokemon = mongoose.model('Pokemon', PokemonSchema);
+const Unicorn = mongoose.model('Unicorn', UnicornSchema);
 
 async function updateImages() {
     try {
@@ -37,34 +26,34 @@ async function updateImages() {
             console.log('MongoDB HAS CONNECTED....');
         });
 
-        // Find all Pokémon
-        const pokemons = await Pokemon.find({});
-        console.log(`Found ${pokemons.length} Pokémon in the database.`);
+        // Find all Unicorns
+        const unicorns = await Unicorn.find({});
+        console.log(`Found ${unicorns.length} unicorns in the database.`);
 
-        for (const pokemon of pokemons) {
-            if (!pokemon.img || !pokemon.img.data) {
-                console.log(`Processing Pokémon: ${pokemon.name}`);
+        for (const unicorn of unicorns) {
+            if (!unicorn.img || !unicorn.img.data) {
+                console.log(`Processing unicorn: ${unicorn.name}`);
 
                 try {
                     // Fetch the image from the URL
-                    const response = await axios.get(pokemon.image, {
+                    const response = await axios.get(unicorn.image, {
                         responseType: 'arraybuffer'
                     });
 
                     // Update the img field
-                    pokemon.img = {
+                    unicorn.img = {
                         data: Buffer.from(response.data),
                         contentType: response.headers['content-type']
                     };
 
-                    // Save the updated Pokémon document
-                    await pokemon.save();
-                    console.log(`Updated Pokémon: ${pokemon.name}`);
+                    // Save the updated Unicorn document
+                    await unicorn.save();
+                    console.log(`Updated unicorn: ${unicorn.name}`);
                 } catch (error) {
-                    console.error(`Failed to fetch or update image for ${pokemon.name}:`, error.message);
+                    console.error(`Failed to fetch or update image for ${unicorn.name}:`, error.message);
                 }
             } else {
-                console.log(`Pokémon ${pokemon.name} already has an img attribute.`);
+                console.log(`Unicorn ${unicorn.name} already has an img attribute.`);
             }
         }
 

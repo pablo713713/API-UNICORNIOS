@@ -5,25 +5,24 @@ const createError = require('http-errors');
 const app = express();
 const dotenv = require('dotenv').config();
 
-const PokemonRouter = require('./Routes/Pokemon.route');
+const UnicornRouter = require('./Routes/Unicorn.route');
 
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({extended:true}));
+app.use(express.urlencoded({ extended: true }));
 
+// Usar la variable de entorno MONGODB_URI desde el archivo .env
 mongoose.connect(process.env.MONGODB_URI, {
-    dbName: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    pass: process.env.DB_PASS
+    dbName: 'unicornsDB'
 }).then(() => {
     console.log('MongoDB HAS CONNECTED....');
+}).catch((err) => {
+    console.error('MongoDB connection error:', err);
 });
 
-app.use('/pokemon', PokemonRouter);
+app.use('/unicorns', UnicornRouter);
 
-
-
-app.use((req, res, next) =>{
+app.use((req, res, next) => {
     next(createError(404, "Not Found"));
 });
 
@@ -34,10 +33,10 @@ app.use((err, req, res, next) => {
             status: err.status || 500,
             message: err.message
         }
-    })
+    });
 });
 
-app.listen(process.env.PORT, () =>
-    {
-        console.log('server started on port ', process.env.PORT)
+const PORT = process.env.PORT || 3000; // Usar la variable de entorno PORT
+app.listen(PORT, () => {
+    console.log('server started on port ', PORT);
 });
